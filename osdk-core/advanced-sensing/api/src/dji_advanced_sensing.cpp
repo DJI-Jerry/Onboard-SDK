@@ -433,22 +433,20 @@ bool AdvancedSensing::startMainCameraH264(H264Callback cb, void * cbParam)
 
 void AdvancedSensing::stopFPVCameraStream()
 {
-  fpvCam_ptr->stopCameraStream();
-}
-
-void AdvancedSensing::stopFPVCameraH264()
-{
-  fpvCam_ptr->stopCameraH264();
+  if (vehicle_ptr->isM300()) {
+    stopH264Stream(LiveView::OSDK_CAMERA_POSITION_FPV);
+  } else {
+    fpvCam_ptr->stopCameraStream();
+  }
 }
 
 void AdvancedSensing::stopMainCameraStream()
 {
-  mainCam_ptr->stopCameraStream();
-}
-
-void AdvancedSensing::stopMainCameraH264()
-{
-  mainCam_ptr->stopCameraH264();
+  if (vehicle_ptr->isM300()) {
+    stopH264Stream(LiveView::OSDK_CAMERA_POSITION_NO_1);
+  } else {
+    mainCam_ptr->stopCameraStream();
+  }
 }
 
 bool AdvancedSensing::newFPVCameraImageIsReady()
@@ -500,9 +498,11 @@ LiveView::LiveViewErrCode AdvancedSensing::stopH264Stream(
     return liveview->stopH264Stream(pos);
   else if (vehicle_ptr->isM210V2()) {
     switch (pos) {
-      case LiveView::OSDK_CAMERA_POSITION_FPV:vehicle_ptr->advancedSensing->stopFPVCameraH264();
+      case LiveView::OSDK_CAMERA_POSITION_FPV:
+        fpvCam_ptr->stopCameraH264();
         return LiveView::OSDK_LIVEVIEW_PASS;
-      case LiveView::OSDK_CAMERA_POSITION_NO_1:vehicle_ptr->advancedSensing->stopMainCameraH264();
+      case LiveView::OSDK_CAMERA_POSITION_NO_1:
+        mainCam_ptr->stopCameraH264();
         return LiveView::OSDK_LIVEVIEW_PASS;
       default:
         DERROR(
