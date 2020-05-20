@@ -105,28 +105,28 @@ main(int argc, char** argv) {
       case 'a':
         sprintf(h264FileName, "FPV_%d-%d-%d_%d-%d-%d.h264", tm.tm_year + 1900,
                 tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-        vehicle->advancedSensing->startH264Stream(LiveView::OSDK_CAMERA_POSITION_FPV,
+        vehicle->advancedSensing->startH264Stream(FPV_CAMERA,
                                            liveViewSampleCb,
                                            (void *) h264FileName);
         break;
       case 'b':
         sprintf(h264FileName, "MainCam_%d-%d-%d_%d-%d-%d.h264", tm.tm_year + 1900,
                 tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-        vehicle->advancedSensing->startH264Stream(LiveView::OSDK_CAMERA_POSITION_NO_1,
+        vehicle->advancedSensing->startH264Stream(MAIN_CAMERA,
                                            liveViewSampleCb,
                                            (void *) h264FileName);
         break;
       case 'c':
         sprintf(h264FileName, "ViceCam_%d-%d-%d_%d-%d-%d.h264", tm.tm_year + 1900,
                 tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-        vehicle->advancedSensing->startH264Stream(LiveView::OSDK_CAMERA_POSITION_NO_2,
+        vehicle->advancedSensing->startH264Stream(VICE_CAMERA,
                                            liveViewSampleCb,
                                            (void *) h264FileName);
         break;
       case 'd':
         sprintf(h264FileName, "TopCam_%d-%d-%d_%d-%d-%d.h264", tm.tm_year + 1900,
                 tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-        vehicle->advancedSensing->startH264Stream(LiveView::OSDK_CAMERA_POSITION_NO_3,
+        vehicle->advancedSensing->startH264Stream(TOP_CAMERA,
                                            liveViewSampleCb,
                                            (void *) h264FileName);
         break;
@@ -137,16 +137,16 @@ main(int argc, char** argv) {
 
     switch (inputChar) {
       case 'a':
-        vehicle->advancedSensing->stopH264Stream(LiveView::OSDK_CAMERA_POSITION_FPV);
+        vehicle->advancedSensing->stopH264Stream(FPV_CAMERA);
         break;
       case 'b':
-        vehicle->advancedSensing->stopH264Stream(LiveView::OSDK_CAMERA_POSITION_NO_1);
+        vehicle->advancedSensing->stopH264Stream(MAIN_CAMERA);
         break;
       case 'c':
-        vehicle->advancedSensing->stopH264Stream(LiveView::OSDK_CAMERA_POSITION_NO_2);
+        vehicle->advancedSensing->stopH264Stream(VICE_CAMERA);
         break;
       case 'd':
-        vehicle->advancedSensing->stopH264Stream(LiveView::OSDK_CAMERA_POSITION_NO_3);
+        vehicle->advancedSensing->stopH264Stream(TOP_CAMERA);
         break;
 
     }

@@ -20,6 +20,7 @@
 #define ADVANCED_SENSING
 #include <dji_vehicle.hpp>
 #include "dji_advanced_sensing.hpp"
+#include "dji_camera_stream_decoder.hpp"
 #include "dji_version.hpp"
 
 using namespace DJI;
@@ -77,10 +78,7 @@ void AdvancedSensing::deinit()
 AdvancedSensing::AdvancedSensing(Vehicle* vehiclePtr) :
   vehicle_ptr(vehiclePtr),
   advancedSensingProtocol(NULL),
-  liveview(NULL),
-  perception(NULL),
-  fpvCam_ptr(NULL),
-  mainCam_ptr(NULL)
+  perception(NULL)
 {
   stereoHandler.callback  = 0;
   stereoHandler.userData  = 0;
@@ -102,14 +100,20 @@ AdvancedSensing::AdvancedSensing(Vehicle* vehiclePtr) :
 
   if (vehiclePtr->isM300()) {
     DSTATUS("Advanced Sensing init for the M300 drone");
-    liveview = new LiveView(vehiclePtr);
+    camStreamMap = {
+        {MAIN_CAMERA, new DJICameraStream(MAIN_CAMERA, USB_BULK_LINK, vehiclePtr->linker)},
+        {VICE_CAMERA, new DJICameraStream(VICE_CAMERA, USB_BULK_LINK, vehiclePtr->linker)},
+        {TOP_CAMERA,  new DJICameraStream(TOP_CAMERA, USB_BULK_LINK, vehiclePtr->linker)},
+        {FPV_CAMERA,  new DJICameraStream(FPV_CAMERA, USB_BULK_LINK, vehiclePtr->linker)},
+    };
     perception = new Perception(vehiclePtr);
   } else {
     DSTATUS("Advanced Sensing init for the M210 drone");
     this->advancedSensingProtocol = new AdvancedSensingProtocol();
-    liveview = new LiveView(vehiclePtr);
-    fpvCam_ptr = new DJICameraStream(FPV_CAMERA);
-    mainCam_ptr = new DJICameraStream(MAIN_CAMERA);
+    camStreamMap = {
+        {MAIN_CAMERA, new DJICameraStream(MAIN_CAMERA, USB_BULK_LINK, vehiclePtr->linker)},
+        {VICE_CAMERA, new DJICameraStream(VICE_CAMERA, USB_BULK_LINK, vehiclePtr->linker)},
+    };
   }
 }
 
@@ -118,20 +122,10 @@ AdvancedSensing::~AdvancedSensing()
   if (this->advancedSensingProtocol)
     delete this->advancedSensingProtocol;
 
-  if(fpvCam_ptr)
-  {
-    delete fpvCam_ptr;
+  for (auto i:camStreamMap) {
+    if (i.second) delete i.second;
   }
-
-  if(mainCam_ptr)
-  {
-    delete mainCam_ptr;
-  }
-
-  if(liveview)
-  {
-    delete liveview;
-  }
+  camStreamMap.clear();
 
   if(perception)
   {
@@ -410,108 +404,98 @@ AdvancedSensing::getAdvancedSensingProtocol()
   return this->advancedSensingProtocol;
 }
 
-bool AdvancedSensing::startFPVCameraStream(CameraImageCallback cb, void * cbParam)
-{
-  return fpvCam_ptr->startCameraStream(cb, cbParam);
+void M300DecoderCB(uint8_t* buf, int bufLen, void* userData) {
+  if (userData) {
+    DJICameraStreamDecoder *decoder = (DJICameraStreamDecoder *) userData;
+    decoder->decodeBuffer(buf, bufLen);
+  }
 }
 
-bool AdvancedSensing::startFPVCameraH264(H264Callback cb, void * cbParam)
+bool AdvancedSensing::startFPVCameraStream(CameraImageCallback cb, void * cbParam)
 {
-  return fpvCam_ptr->startCameraH264(cb, cbParam);
+  if ((camStreamMap.find(FPV_CAMERA) != camStreamMap.end())
+      && (camStreamMap[FPV_CAMERA] != nullptr))
+    return camStreamMap[FPV_CAMERA]->startCameraStream(cb, cbParam);
+  else return false;
 }
 
 bool AdvancedSensing::startMainCameraStream(CameraImageCallback cb, void * cbParam)
 {
   // Use the keep_camera_x5s_state to prevent x5s become a storage device, otherwise could not get the stream
-  return mainCam_ptr->startCameraStream(cb, cbParam);
-}
-
-bool AdvancedSensing::startMainCameraH264(H264Callback cb, void * cbParam)
-{
-  return mainCam_ptr->startCameraH264(cb, cbParam);
+  if ((camStreamMap.find(MAIN_CAMERA) != camStreamMap.end())
+      && (camStreamMap[MAIN_CAMERA] != nullptr))
+    return camStreamMap[MAIN_CAMERA]->startCameraStream(cb, cbParam);
+  else return false;
 }
 
 void AdvancedSensing::stopFPVCameraStream()
 {
-  if (vehicle_ptr->isM300()) {
-    stopH264Stream(LiveView::OSDK_CAMERA_POSITION_FPV);
-  } else {
-    fpvCam_ptr->stopCameraStream();
-  }
+  if ((camStreamMap.find(FPV_CAMERA) != camStreamMap.end())
+      && (camStreamMap[FPV_CAMERA] != nullptr))
+    camStreamMap[FPV_CAMERA]->stopCameraStream();
 }
 
 void AdvancedSensing::stopMainCameraStream()
 {
-  if (vehicle_ptr->isM300()) {
-    stopH264Stream(LiveView::OSDK_CAMERA_POSITION_NO_1);
-  } else {
-    mainCam_ptr->stopCameraStream();
-  }
+  if ((camStreamMap.find(MAIN_CAMERA) != camStreamMap.end())
+      && (camStreamMap[MAIN_CAMERA] != nullptr))
+    camStreamMap[MAIN_CAMERA]->stopCameraStream();
 }
 
 bool AdvancedSensing::newFPVCameraImageIsReady()
 {
-  return fpvCam_ptr->newImageIsReady();
+  if ((camStreamMap.find(FPV_CAMERA) != camStreamMap.end())
+      && (camStreamMap[FPV_CAMERA] != nullptr))
+    return camStreamMap[FPV_CAMERA]->newImageIsReady();
+  else
+    return false;
 }
 
 bool AdvancedSensing::newMainCameraImageReady()
 {
-  return mainCam_ptr->newImageIsReady();
+  if ((camStreamMap.find(MAIN_CAMERA) != camStreamMap.end())
+      && (camStreamMap[MAIN_CAMERA] != nullptr))
+    return camStreamMap[MAIN_CAMERA]->newImageIsReady();
+  else
+    return false;
 }
 
 bool AdvancedSensing::getMainCameraImage(CameraRGBImage& copyOfImage)
 {
-  return mainCam_ptr->getCurrentImage(copyOfImage);
+  if ((camStreamMap.find(MAIN_CAMERA) != camStreamMap.end())
+      && (camStreamMap[MAIN_CAMERA] != nullptr))
+    return camStreamMap[MAIN_CAMERA]->getCurrentImage(copyOfImage);
+  else
+    return false;
 }
 
 bool AdvancedSensing::getFPVCameraImage(CameraRGBImage& copyOfImage)
 {
-  return fpvCam_ptr->getCurrentImage(copyOfImage);
+  if ((camStreamMap.find(FPV_CAMERA) != camStreamMap.end())
+      && (camStreamMap[FPV_CAMERA] != nullptr))
+    return camStreamMap[FPV_CAMERA]->getCurrentImage(copyOfImage);
+  else
+    return false;
 }
 void AdvancedSensing::setAcmDevicePath(const char *acm_path)
 {
     this->acm_dev=acm_path;
 }
 
-LiveView::LiveViewErrCode AdvancedSensing::startH264Stream(
-    LiveView::LiveViewCameraPosition pos, H264Callback cb, void *userData) {
-  if (vehicle_ptr->isM300())
-    return liveview->startH264Stream(pos, cb, userData);
-  else if(vehicle_ptr->isM210V2()) {
-    switch (pos) {
-      case LiveView::OSDK_CAMERA_POSITION_FPV:
-        return (startFPVCameraH264(cb, userData)) ? LiveView::OSDK_LIVEVIEW_PASS : LiveView::OSDK_LIVEVIEW_UNKNOWN;
-      case LiveView::OSDK_CAMERA_POSITION_NO_1:
-        return(startMainCameraH264(cb, userData)) ? LiveView::OSDK_LIVEVIEW_PASS : LiveView::OSDK_LIVEVIEW_UNKNOWN;
-      default:
-        DERROR("M210 V2 series only support FPV and MainCam H264 steam in OSDK.");
-        return LiveView::OSDK_LIVEVIEW_INDEX_ILLEGAL;
-    }
-  } else {
-    return LiveView::OSDK_LIVEVIEW_UNSUPPORT_AIRCRAFT;
+bool AdvancedSensing::startH264Stream(
+    CameraType pos, H264Callback cb, void *userData) {
+  if ((camStreamMap.find(pos) != camStreamMap.end())
+      && (camStreamMap[pos] != nullptr)) {
+    return camStreamMap[pos]->startCameraH264(cb, userData);
   }
+  return false;
 }
 
-LiveView::LiveViewErrCode AdvancedSensing::stopH264Stream(
-    LiveView::LiveViewCameraPosition pos) {
-  if (vehicle_ptr->isM300())
-    return liveview->stopH264Stream(pos);
-  else if (vehicle_ptr->isM210V2()) {
-    switch (pos) {
-      case LiveView::OSDK_CAMERA_POSITION_FPV:
-        fpvCam_ptr->stopCameraH264();
-        return LiveView::OSDK_LIVEVIEW_PASS;
-      case LiveView::OSDK_CAMERA_POSITION_NO_1:
-        mainCam_ptr->stopCameraH264();
-        return LiveView::OSDK_LIVEVIEW_PASS;
-      default:
-        DERROR(
-            "M210 V2 series only support FPV and MainCam H264 steam in OSDK.");
-        return LiveView::OSDK_LIVEVIEW_INDEX_ILLEGAL;
-    }
-  } else {
-    DERROR("Only support M210 V2 and M300.");
-    return LiveView::OSDK_LIVEVIEW_UNSUPPORT_AIRCRAFT;
+void AdvancedSensing::stopH264Stream(
+    CameraType pos) {
+  if ((camStreamMap.find(pos) != camStreamMap.end())
+      && (camStreamMap[pos] != nullptr)) {
+    camStreamMap[pos]->stopCameraH264();
   }
 }
 

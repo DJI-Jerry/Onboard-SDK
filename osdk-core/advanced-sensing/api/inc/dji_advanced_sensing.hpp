@@ -20,6 +20,7 @@
 #include "dji_perception.hpp"
 
 #include "dji_camera_stream.hpp"
+#include <map>
 
 namespace DJI {
 namespace OSDK {
@@ -232,7 +233,7 @@ public:
    *  @param cbParam a void pointer that users can manipulate inside the callback
    *  @return Errorcode of liveivew, ref to DJI::OSDK::LiveView::LiveViewErrCode
    */
-  LiveView::LiveViewErrCode startH264Stream(LiveView::LiveViewCameraPosition pos, H264Callback cb, void *userData);
+  bool startH264Stream(CameraType pos, H264Callback cb, void *userData);
 
   /*! @brief
    *
@@ -243,7 +244,7 @@ public:
    *  @param pos point out which camera to output the H264 stream
    *  @return Errorcode of liveivew, ref to DJI::OSDK::LiveView::LiveViewErrCode
    */
-  LiveView::LiveViewErrCode stopH264Stream(LiveView::LiveViewCameraPosition pos);
+  void stopH264Stream(CameraType pos);
 
   /*! @brief
    *
@@ -294,9 +295,7 @@ private:
 private:
 AdvancedSensingProtocol* advancedSensingProtocol;
 Vehicle* vehicle_ptr;
-DJICameraStream* mainCam_ptr;
-DJICameraStream* fpvCam_ptr;
-LiveView *liveview;
+std::map<CameraType, DJICameraStream*> camStreamMap;
 Perception *perception;
 const char* acm_dev;
 

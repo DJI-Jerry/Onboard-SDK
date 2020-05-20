@@ -24,9 +24,10 @@
  */
 
 #include "dji_camera_stream.hpp"
-#include "dji_camera_stream_link.hpp"
+#include "dji_camera_stream_udt_link.hpp"
+#include "dji_camera_stream_bulk_link.hpp"
 #include "dji_camera_stream_decoder.hpp"
-
+#include "dji_linker.hpp"
 #include "dji_log.hpp"
 
 void decodeStream(void* cbParam, uint8_t* buf, int len)
@@ -35,11 +36,28 @@ void decodeStream(void* cbParam, uint8_t* buf, int len)
   d->decodeBuffer(buf, len);
 }
 
-DJICameraStream::DJICameraStream(CameraType camType) :
-        cameraType(camType)
+DJICameraStream::DJICameraStream(CameraType camType, LinkType linkType, DJI::OSDK::Linker *linker) :
+        cameraType(camType), linkType(linkType)
 {
-  cameraNameStr = (camType == FPV_CAMERA) ? std::string("FPV_CAMERA") : std::string("MAIN_CAMERA");
-  rawDataStream = new DJICameraStreamLink(camType);
+  switch (camType) {
+    case FPV_CAMERA:cameraNameStr = std::string("FPV_CAMERA");
+      break;
+    case MAIN_CAMERA:cameraNameStr = std::string("Main_CAMERA");
+      break;
+    case VICE_CAMERA:cameraNameStr = std::string("Vice_CAMERA");
+      break;
+    case TOP_CAMERA:cameraNameStr = std::string("Top_CAMERA");
+      break;
+  }
+
+  switch (linkType) {
+    case UDT_LINK:
+      rawDataStream = new DJICameraStreamUdtLink(camType);
+      break;
+    case USB_BULK_LINK:
+      rawDataStream = new DJICameraStreamBulkLink(camType, linker);
+      break;
+  }
   decoder       = new DJICameraStreamDecoder;
 }
 

@@ -12,13 +12,15 @@
 
 #include <string>
 #include "dji_camera_image.hpp"
+#include "dji_linker.hpp"
+
 class DJICameraStreamLink;
 class DJICameraStreamDecoder;
 
 class DJICameraStream
 {
 public:
-  DJICameraStream(CameraType camType = FPV_CAMERA);
+  DJICameraStream(CameraType camType = FPV_CAMERA, LinkType linkType = UDT_LINK, DJI::OSDK::Linker *linker = nullptr);
   ~DJICameraStream();
 
   bool newImageIsReady();
@@ -42,6 +44,7 @@ private:
   DJICameraStreamLink     *rawDataStream;
   DJICameraStreamDecoder  *decoder;
 
+  LinkType linkType;
   CameraType cameraType;
   std::string cameraNameStr;
   CameraRGBImage latestImage;

@@ -10,45 +10,40 @@
 
 #ifndef DJICAMERASTREAMLINK_HH
 #define DJICAMERASTREAMLINK_HH
-#include "netdb.h"
 #include <string>
 #include "pthread.h"
-
 #include "dji_camera_image.hpp"
 
 typedef void (*CAMCALLBACK)(void*, uint8_t*, int);
-
+class Linker;
 class DJICameraStreamLink
 {
 public:
   DJICameraStreamLink(CameraType c);
-  ~DJICameraStreamLink();
+  virtual ~DJICameraStreamLink();
   /* Establish link to camera */
-  bool init();
+  virtual bool init();
 
   /* Start the data receiving thread */
-  bool start();
+  virtual bool start();
 
   /* Stop the data receiving thread */
-  void stop();
+  virtual void stop();
 
   /* do both stop and unInit */
-  void cleanup();
+  virtual void cleanup();
 
   /* start routine for the data receiving thread*/
   static void* readThreadEntry(void *);
 
-  bool isThreadRunning();
+  virtual bool isThreadRunning();
 
   /* register a callback function */
-  void registerCallback(CAMCALLBACK f, void* param);
+  virtual void registerCallback(CAMCALLBACK f, void* param);
 
-private:
+ protected:
   CameraType  camType;
   std::string camNameStr;
-  std::string ip;
-  std::string port;
-  int fHandle;
 
   pthread_t readThread;
   int       threadStatus;
@@ -59,10 +54,10 @@ private:
   void* cbParam;
 
   /* disconnect link from camera */
-  void unInit();
+  virtual void unInit();
 
   /* real function to read data from camera */
-  void readThreadFunc();
+  virtual void readThreadFunc();
 };
 
 #endif // DJICAMERASTREAMLINK_HH

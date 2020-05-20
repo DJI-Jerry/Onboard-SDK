@@ -37,8 +37,16 @@ typedef void (*H264Callback)(uint8_t* buf, int bufLen, void* userData);
  */
 enum CameraType
 {
-  FPV_CAMERA  = 0,
-  MAIN_CAMERA = 1
+  MAIN_CAMERA = 0,
+  VICE_CAMERA = 1,
+  TOP_CAMERA = 2,
+  FPV_CAMERA  = 3,
+};
+
+enum LinkType
+{
+  UDT_LINK  = 0,
+  USB_BULK_LINK = 1,
 };
 
 #endif //ADVANCED_SENSING_DJI_CAMERA_IMAGE_HPP
