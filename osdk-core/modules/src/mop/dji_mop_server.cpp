@@ -41,6 +41,9 @@ MopErrCode MopServer::accept(PipelineID id, PipelineType type, MopPipeline *&p) 
   int32_t ret;
   mop_channel_handle_t bind_handle;
 
+  /*! Check the entry env */
+  checkEntry();
+
   /*! 0.Find whether the pipeline object is existed or not */
   DSTATUS("/*! 0.Find whether the pipeline object is existed or not */");
   if (pipelineMap.find(id) != pipelineMap.end()) {
@@ -89,6 +92,8 @@ MopErrCode MopServer::close(PipelineID id) {
   if (pipelineMap.find(id) == pipelineMap.end()) {
     return MOP_PARM;
   }
+  /*! Check the entry env */
+  checkEntry();
   mop_channel_handle_t handler = pipelineMap[id];
 
   DSTATUS("Trying to close pipeline channel_id : %d", id);
