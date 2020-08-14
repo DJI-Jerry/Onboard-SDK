@@ -421,6 +421,8 @@ moveByPositionOffset(Vehicle *vehicle, float xOffsetDesired,
   int   outOfBounds         = 0;
   int   brakeCounter        = 0;
   int   speedFactor         = 2;
+  float cmdSmoothFactor     = 0;
+  int   cmdSmoothInMs       = 1000;
   float xCmd, yCmd, zCmd;
 
   /*! Calculate the inputs to send the position controller. We implement basic
@@ -456,7 +458,13 @@ moveByPositionOffset(Vehicle *vehicle, float xOffsetDesired,
   //! Main closed-loop receding setpoint position control
   while (elapsedTimeInMs < timeoutInMilSec)
   {
-    vehicle->control->positionAndYawCtrl(xCmd, yCmd, zCmd,
+    cmdSmoothFactor = (float )elapsedTimeInMs / cmdSmoothInMs;
+    cmdSmoothFactor = (cmdSmoothFactor > 1.0f) ? 1.0f : cmdSmoothFactor;
+    float xCmdFinal = xCmd * cmdSmoothFactor;
+    float yCmdFinal = yCmd * cmdSmoothFactor;
+    float zCmdFinal = zCmd * cmdSmoothFactor;
+    DSTATUS("cmdSmoothFactor = %0.2f cmds : %0.2f, %0.2f, %0.2f", cmdSmoothFactor, xCmdFinal, yCmdFinal, zCmdFinal);
+    vehicle->control->positionAndYawCtrl(xCmdFinal, yCmdFinal, zCmdFinal,
                                          yawDesiredRad / DEG2RAD);
 
     usleep(cycleTimeInMs * 1000);
@@ -489,7 +497,11 @@ moveByPositionOffset(Vehicle *vehicle, float xOffsetDesired,
     xOffsetRemaining = xOffsetDesired - localOffset.x;
     yOffsetRemaining = yOffsetDesired - localOffset.y;
     zOffsetRemaining = zOffsetDesired - localOffset.z;
-
+    DSTATUS("remain = (%0.2f, %0.2f, %0.2f) inbound(%d)",
+            xOffsetRemaining,
+            yOffsetRemaining,
+            zOffsetRemaining,
+            withinBoundsCounter);
     //! See if we need to modify the setpoint
     if (std::abs(xOffsetRemaining) < speedFactor)
     {
