@@ -22,7 +22,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(djiosdk-payloads-sample)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread -g -O0 -Wall -Werror")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread -g -O0 -Wall -Werror -ludev")
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../core/inc)
 

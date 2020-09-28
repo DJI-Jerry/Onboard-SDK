@@ -100,6 +100,8 @@ typedef struct {
      * interface of their serial device and register it. Please use the relevant tools to test the interface before
      * registering.*/
     E_OsdkStat (*UartClose)(T_HalObj *obj);
+
+    E_OsdkStat (*UartHotPlugInit)(const char *port, const int baudrate, T_HalObj *obj);
 } T_OsdkHalUartHandler;
 
 #ifdef __linux__
@@ -123,6 +125,8 @@ typedef struct {
    * interface of their usb device and register it. Please use the relevant tools to test the interface before
    * registering.*/
   E_OsdkStat (*USBBulkClose)(T_HalObj *obj);
+
+  E_OsdkStat (*USBBulkHotPlugInit)(uint16_t pid, uint16_t vid, uint16_t num, uint16_t epIn, uint16_t epOut, T_HalObj *obj);
 } T_OsdkHalUSBBulkHandler;
 #endif
 

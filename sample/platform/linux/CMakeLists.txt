@@ -92,6 +92,7 @@ include_directories(${ADVANCED_SENSING_HEADERS_DIR})
 message((${ADVANCED_SENSING_HEADERS_DIR}))
 
 find_package(LibUSB REQUIRED)
+find_package(LibUDEV REQUIRED)
 find_package(FFMPEG REQUIRED)
 #find_package(Waypt2Core REQUIRED)
 
@@ -105,6 +106,7 @@ endif(FFMPEG_FOUND)
 
 
 include_directories(${LIBUSB_1_INCLUDE_DIRS})
+include_directories(${LIBUDEV_INCLUDE_DIRS})
 include_directories(${FFMPEG_INCLUDE_DIR})
 #include_directories(${WAYPT2_CORE_INCLUDE_DIRS})
 
@@ -116,6 +118,7 @@ if(ADVANCED_SENSING)
     link_libraries(advanced-sensing)
     link_libraries(djiosdk-core)
     link_libraries(${LIBUSB_1_LIBRARIES})
+    link_libraries(${LIBUDEV_LIBRARIES})
     link_libraries(${FFMPEG_LIBRARIES})
 endif()
 
